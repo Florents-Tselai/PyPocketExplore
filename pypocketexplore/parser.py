@@ -26,7 +26,7 @@ class PocketTopicScraper:
 
     def scrap(self):
         html = self._make_request(self.topic)
-        soup = BeautifulSoup(html, 'lxml')
+        soup = BeautifulSoup(html, 'html.parser')
         data_ids = [a.get('data-id') for a in soup.find_all('a', class_='link_track')]
         titles = [a.text for a in soup.find_all('a', class_='link_track') if a.text != '\n \n']
         excerpts = [p.text for p in soup.find_all('p', class_='excerpt')]

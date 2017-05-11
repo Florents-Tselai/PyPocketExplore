@@ -10,7 +10,7 @@ from pypocketexplore.parser import PocketTopicScraper
 app = Flask(__name__)
 
 
-@app.route("/pypocketexplore/topic/<topic>", methods=["GET"])
+@app.route("/api/topic/<topic>", methods=["GET"])
 def get_topic(topic):
     items = list(PocketTopicScraper(topic).scrap())
     return jsonify(items)

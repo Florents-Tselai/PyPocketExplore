@@ -6,8 +6,10 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 from time import sleep
 from random import choice
-import 
-
+from api import get_topic
+from redis import StrictRedis
+from jobs import extract_topic_items
+from rq import Queue
 
 def main():
     html = req.get("https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
@@ -17,9 +19,9 @@ def main():
         if td.text != '':
             topics.add(td.text)
     print("Finished! Fetched {} topics labels".format(len(topics)))
+    q = Queue('topics', connection=StrictRedis())
     for topic in tqdm(topics):
-        print(topic)
-        sleep(choice(range(5, 10)))
+        q.enqueue_call(extract_topic_items, kwargs=dict(topic=topic))
 
 
 if __name__ == '__main__':
