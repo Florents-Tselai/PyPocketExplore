@@ -7,7 +7,7 @@ from urllib.request import urlopen, Request
 
 from bs4 import BeautifulSoup
 
-from .model import PocketItem, to_dict
+from pypocketexplore.model import PocketItem, to_dict
 
 
 class PocketTopicScraper:

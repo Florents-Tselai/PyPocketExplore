@@ -6,7 +6,7 @@ from distutils.core import setup
 setup(
     name='PyPocketExplore',
     version='1.0.0',
-    packages=['api', ],
+    packages=['pypocketexplore', ],
     license='The MIT License (MIT) Copyright © 2017 Florents Tselai.',
     description='Unofficial API to Pocket Explore data',
     long_description=open('README', 'r').read(),
