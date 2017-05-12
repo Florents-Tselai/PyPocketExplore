@@ -22,7 +22,9 @@ def extract_topic_items(topic):
                                  upsert=True)
         for related_topic in related_topics:
             req.get('http://localhost:5000/api/topic/{}?async=true'.format(topic)).json()
+        print("Rate limit! Going to sleep for 2 mins!")
         sleep(2 * 60)
+        print("Wakey wakey eggs and bakey!")
         return res
     else:
         raise Exception
