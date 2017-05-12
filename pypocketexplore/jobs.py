@@ -8,7 +8,8 @@ from time import sleep
 
 def extract_topic_items(topic):
     db = MongoClient(MONGO_URI).get_default_database()
-    data = req.get('http://localhost:5000/api/topic/{}'.format(topic)).json()
+    resp = req.get('http://localhost:5000/api/topic/{}'.format(topic))\
+    data = resp.json()
     related_topics = data.get('related_topics')
 
     items = data.get('items')
@@ -26,6 +27,9 @@ def extract_topic_items(topic):
         sleep(2 * 60)
         print("Wakey wakey eggs and bakey!")
         return res
+    elif resp.ok and not items:
+        return
+    
     else:
         raise Exception
 
