@@ -30,6 +30,6 @@ def get_topic(topic):
 
 
     results = PocketTopicScraper(topic).scrap()
-    pprint(results)
+    #pprint(results)
 
     return jsonify(results)
