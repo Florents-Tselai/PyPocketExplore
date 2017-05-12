@@ -4,7 +4,7 @@ import requests as req
 from pymongo import MongoClient
 
 from pypocketexplore.config import MONGO_URI
-
+from time import sleep
 
 def extract_topic_items(topic):
     db = MongoClient(MONGO_URI).get_default_database()
@@ -22,6 +22,7 @@ def extract_topic_items(topic):
                                  upsert=True)
         for related_topic in related_topics:
             req.get('http://localhost:5000/api/topic/{}?async=true'.format(topic)).json()
+        sleep(2 * 60)
         return res
     else:
         raise Exception
