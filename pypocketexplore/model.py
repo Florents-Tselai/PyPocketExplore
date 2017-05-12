@@ -56,6 +56,14 @@ class PocketItem:
     def image(self, image):
         self._image = image
 
+    @property
+    def saves_count_datetime(self):
+        return self._saves_count_datetime
+
+    @saves_count_datetime.setter
+    def saves_count_datetime(self, saves_count_datetime):
+        self._saves_count_datetime = saves_count_datetime
+
 
 def to_dict(model):
     return dict((get_key(key), value)

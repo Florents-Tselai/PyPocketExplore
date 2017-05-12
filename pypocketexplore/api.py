@@ -3,14 +3,33 @@
 
 __author__ = 'Florents Tselai'
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
-from pypocketexplore.parser import PocketTopicScraper
+from .parser import PocketTopicScraper
+from pprint import pprint
+from pypocketexplore.config import MONGO_URI
+from redis import StrictRedis
+from pymongo import MongoClient
+from rq import Queue
+from pypocketexplore.jobs import extract_topic_items
 
 app = Flask(__name__)
 
 
 @app.route("/api/topic/<topic>", methods=["GET"])
 def get_topic(topic):
-    items = list(PocketTopicScraper(topic).scrap())
-    return jsonify(items)
+
+    if request.args.get('async', 'false') == 'true':
+        db = MongoClient(MONGO_URI).get_default_database()
+        q = Queue('topics', connection=StrictRedis())
+        job = q.enqueue_call(extract_topic_items, kwargs=dict(topic=topic))
+        return jsonify({
+            'topic': topic,
+            'job': job.get_id()
+        })
+
+
+    results = PocketTopicScraper(topic).scrap()
+    pprint(results)
+
+    return jsonify(results)

@@ -3,13 +3,12 @@
 
 import requests as req
 from bs4 import BeautifulSoup
-from tqdm import tqdm
-from time import sleep
-from random import choice
-from api import get_topic
 from redis import StrictRedis
-from jobs import extract_topic_items
 from rq import Queue
+from tqdm import tqdm
+from pypocketexplore.jobs import extract_topic_items
+from pymongo import MongoClient
+from pypocketexplore.config import MONGO_URI
 
 def main():
     html = req.get("https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
