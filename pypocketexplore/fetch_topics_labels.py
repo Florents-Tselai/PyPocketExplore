@@ -18,7 +18,7 @@ def main():
         if td.text != '':
             topics.add(td.text)
     print("Finished! Fetched {} topics labels".format(len(topics)))
-    q = Queue('topics', connection=StrictRedis(), default_timeout=10 * 60)
+    q = Queue('topics', connection=StrictRedis(), timeout=10 * 60)
     for topic in tqdm(topics):
         q.enqueue_call(extract_topic_items, kwargs=dict(topic=topic))
 
