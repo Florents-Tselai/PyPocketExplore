@@ -21,8 +21,8 @@ def get_topic(topic):
 
     if request.args.get('async', 'false') == 'true':
         db = MongoClient(MONGO_URI).get_default_database()
-        q = Queue('topics', connection=StrictRedis(), timeout=10 * 60)
-        job = q.enqueue_call(extract_topic_items, kwargs=dict(topic=topic))
+        q = Queue('topics', connection=StrictRedis())
+        job = q.enqueue_call(extract_topic_items, kwargs=dict(topic=topic), timeout=10 * 60)
         return jsonify({
             'topic': topic,
             'job': job.get_id()
