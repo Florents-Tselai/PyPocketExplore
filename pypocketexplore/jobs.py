@@ -8,7 +8,7 @@ from time import sleep
 
 def extract_topic_items(topic):
     db = MongoClient(MONGO_URI).get_default_database()
-    resp = req.get('http://localhost:5000/api/topic/{}'.format(topic))\
+    resp = req.get('http://localhost:5000/api/topic/{}'.format(topic))
     data = resp.json()
     related_topics = data.get('related_topics')
 
@@ -29,7 +29,7 @@ def extract_topic_items(topic):
         return res
     elif resp.ok and not items:
         return
-    
+
     else:
         raise Exception
 
