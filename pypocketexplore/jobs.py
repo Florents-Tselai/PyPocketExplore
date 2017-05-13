@@ -27,7 +27,7 @@ def extract_topic_items(topic):
     items = data.get('items')
 
     if resp.ok:
-        print('Inserting {} items for topic {}'.format(len(items)), topic)
+        print('Inserting {} items for topic {}'.format(len(items), topic))
         res = db['items'].insert(items)
         r.sadd('scraped_topics', topic)
 
