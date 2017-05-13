@@ -5,8 +5,20 @@ from pymongo import MongoClient
 
 from pypocketexplore.config import MONGO_URI
 from time import sleep
+from redis import StrictRedis
+import rq
+
 
 def extract_topic_items(topic):
+    r = StrictRedis()
+
+    def topic_in_queue(topic):
+        q = rq.Queue('topics', connection=StrictRedis())
+        if any(job.kwargs.get('topic') for job in q.get_jobs()):
+            return True
+        else:
+            return False
+
     db = MongoClient(MONGO_URI).get_default_database()
     resp = req.get('http://localhost:5000/api/topic/{}'.format(topic))
     data = resp.json()
@@ -14,24 +26,22 @@ def extract_topic_items(topic):
 
     items = data.get('items')
 
-    if items:
+    if resp.ok:
+        print('Inserting {} items for topic {}'.format(len(items)), topic)
         res = db['items'].insert(items)
-        db['topics'].update_many({'topic': topic}, {'$set': {'topic': topic,
-                                                             'is_scraped': True,
-                                                             'datetime_scraped': datetime.utcnow(),
-                                                             'queued': True}},
-                                 upsert=True)
+        r.sadd('scraped_topics', topic)
+
         for related_topic in related_topics:
-            req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic)).json()
+            if not topic_in_queue(related_topic) and not r.sismember('scraped_topics', related_topic):
+                print('Enqueuing related topic'.format(related_topic))
+                req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic)).json()
         print("Rate limit! Going to sleep for 2 mins!")
         sleep(2 * 60)
         print("Wakey wakey eggs and bakey!")
         return res
-    elif resp.ok and not items:
-        return
 
     else:
-        raise Exception
+        raise Exception('Something went wrong with topic {}. /api/explore/{} returned {}'.format(topic, topic, resp))
 
 
 if __name__ == '__main__':
