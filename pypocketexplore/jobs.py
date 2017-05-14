@@ -14,7 +14,7 @@ def extract_topic_items(topic):
 
     def topic_in_queue(topic):
         q = rq.Queue('topics', connection=StrictRedis())
-        if any(job.kwargs.get('topic') for job in q.get_jobs()):
+        if any(job.kwargs.get('topic') == topic for job in q.get_jobs()):
             return True
         else:
             return False
