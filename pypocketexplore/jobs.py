@@ -27,18 +27,22 @@ def extract_topic_items(topic):
     items = data.get('items')
 
     if resp.ok:
-        print('Inserting {} items for topic {}'.format(len(items), topic))
-        res = db['items'].insert(items)
-        r.sadd('scraped_topics', topic)
+        if len(items) > 0:
+            print('Inserting {} items for topic {}'.format(len(items), topic))
+            res = db['items'].insert(items)
+            r.sadd('scraped_topics', topic)
 
-        for related_topic in related_topics:
-            if not topic_in_queue(related_topic) and not r.sismember('scraped_topics', related_topic):
-                print('Enqueuing related topic'.format(related_topic))
-                req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic)).json()
-        print("Rate limit! Going to sleep for 2 mins!")
-        sleep(2 * 60)
-        print("Wakey wakey eggs and bakey!")
-        return res
+            for related_topic in related_topics:
+                if not topic_in_queue(related_topic) and not r.sismember('scraped_topics', related_topic):
+                    print('Enqueuing related topic'.format(related_topic))
+                    req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic)).json()
+            print("Rate limit! Going to sleep for 2 mins!")
+            sleep(2 * 60)
+            print("Wakey wakey eggs and bakey!")
+            return res
+
+        else:
+            print('No items for topic {}'.format(topic))
 
     else:
         raise Exception('Something went wrong with topic {}. /api/explore/{} returned {}'.format(topic, topic, resp))
