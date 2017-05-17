@@ -17,14 +17,11 @@ class PocketTopicScraper:
         self.topic = topic
 
     def _make_request(self, topic):
-        req = Request(
-            "http://getpocket.com/explore/%s" % topic.replace(' ', '%20'),
-            data=None,
-            headers={
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-            }
-        )
-        return urlopen(req).read().decode('utf-8')
+        html = req.get("http://getpocket.com/explore/{}".format(topic), headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+        }).content
+
+        return html
 
     def scrap(self):
         html = self._make_request(self.topic)
