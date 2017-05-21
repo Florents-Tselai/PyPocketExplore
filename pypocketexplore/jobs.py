@@ -47,7 +47,7 @@ def download_item(item_id, item_url, redis_con=redis.StrictRedis()):
             print('Item: {} | Url: {} | {}'.format(data.get('item_id'), data.get('item_url'), e))
             raise e
 
-        redis_con.set('pocket:item:{}'.format(item.get('item_id')),
+        rq.get_current_connection().set('pocket:item:{}'.format(item.get('item_id')),
                            pickle.dumps(data)
                            )
 
