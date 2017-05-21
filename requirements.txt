@@ -3,3 +3,4 @@ bs4==0.0.1
 requests==2.14.2
 tqdm==4.11.2
 pymongo==3.4.0
+newspaper3k==0.1.9
