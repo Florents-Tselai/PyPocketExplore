@@ -5,7 +5,7 @@ __author__ = 'Florents Tselai'
 
 from flask import Flask, jsonify, request
 
-from .parser import PocketTopicScraper
+from pypocketexplore.parser import PocketTopicScraper
 from pprint import pprint
 from pypocketexplore.config import MONGO_URI
 from redis import StrictRedis
@@ -33,3 +33,9 @@ def get_topic(topic):
     #pprint(results)
 
     return jsonify(results)
+
+def main():
+    app.run('localhost', 5000, debug=True)
+
+if __name__ == '__main__':
+    main()
