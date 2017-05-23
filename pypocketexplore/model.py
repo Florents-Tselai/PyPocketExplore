@@ -64,6 +64,14 @@ class PocketItem:
     def saves_count_datetime(self, saves_count_datetime):
         self._saves_count_datetime = saves_count_datetime
 
+    @property
+    def article(self):
+        return self._article
+
+    @article.setter
+    def article(self, article):
+        self._article = article
+
 
 def to_dict(model):
     return dict((get_key(key), value)

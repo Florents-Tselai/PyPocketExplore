@@ -8,8 +8,29 @@ from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup
 from datetime import datetime
 import requests as req
+from newspaper import Article, ArticleException
+import json
+from newspaper import news_pool
+from pprint import pprint
+from pypocketexplore.model import PocketItem, to_dict
 
-from .model import PocketItem, to_dict
+
+class ArticleDownloader(Article):
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
+
+    def download(self):
+        super().download()
+        self.parse()
+        self.nlp()
+
+        self.tags = list(self.tags)
+
+        if self.publish_date:
+            self.publish_date = self.publish_date.timestamp()
+
+        self.images = list(self.images)
+        self.imgs = list(self.imgs)
 
 
 class PocketTopicScraper:
@@ -49,6 +70,32 @@ class PocketTopicScraper:
             except Exception:
                 item.image = None
 
+            article_attributes = [
+                                  'title',
+                                  'text',
+                                  'top_img',
+                                  'meta_keywords',
+                                  'summary',
+                                  'additional_data',
+                                  'source_url',
+                                  'keywords',
+                                  'meta_img',
+                                  'publish_date',
+                                  'meta_favicon',
+                                  'movies',
+                                  'tags',
+                                  'authors',
+                                  'images',
+                                  'meta_description'
+                                  ]
+            try:
+                article = ArticleDownloader(item.url)
+                article.download()
+                item.article = dict((k, v) for k, v in article.__dict__.items() if k in article_attributes)
+                print(to_dict(item))
+            except ArticleException:
+                item.article = None
+
         related_topics = []
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
@@ -59,3 +106,15 @@ class PocketTopicScraper:
             'related_topics': related_topics,
             'count': len(items)
         }
+
+
+if __name__ == '__main__':
+    # Download Article
+    #a = ArticleDownloader('https://www.nytimes.com/2016/01/10/opinion/sunday/you-dont-need-more-free-time.html')
+    #a.download()
+    #from json import dumps
+
+    #print(dumps(dict((k, v) for k, v in a.__dict__.items() if k in article_attributes), indent=4))
+    res = PocketTopicScraper('finance').scrap()
+    from pprint import pprint
+    pprint(res)
