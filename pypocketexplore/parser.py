@@ -3,39 +3,83 @@
 
 __author__ = 'Florents Tselai'
 
-from urllib.request import urlopen, Request
+from pprint import pprint
 
+import requests as req
 from bs4 import BeautifulSoup
 from datetime import datetime
-import requests as req
 from newspaper import Article, ArticleException
-import json
-from newspaper import news_pool
-from pprint import pprint
-from pypocketexplore.model import PocketItem, to_dict
+
+from pypocketexplore.model import PocketItem, PocketTopic
+
+print = pprint
 
 
-class ArticleDownloader(Article):
-    def __init__(self, args, **kwargs):
-        super().__init__(args, **kwargs)
+class PocketItemDownloader:
+    ARTICLE_ATTRIBUTES_TO_KEEP = [
+        'title',
+        'text',
+        'top_img',
+        'meta_keywords',
+        'summary',
+        'additional_data',
+        'source_url',
+        'keywords',
+        'meta_img',
+        'publish_date',
+        'meta_favicon',
+        'movies',
+        'tags',
+        'authors',
+        'images',
+        'meta_description'
+    ]
 
-    def download(self):
-        super().download()
-        self.parse()
-        self.nlp()
+    def __init__(self, pocket_item):
+        self._pocket_item = pocket_item
 
-        self.tags = list(self.tags)
+        try:
+            article = Article(self._pocket_item.url)
+            article.download()
+            article.parse()
+            article.nlp()
 
-        if self.publish_date:
-            self.publish_date = self.publish_date.timestamp()
+            article.tags = list(article.tags)
+            if article.publish_date:
+                article.publish_date = article.publish_date.timestamp()
 
-        self.images = list(self.images)
-        self.imgs = list(self.imgs)
+            article.images = list(article.images)
+
+            self._pocket_item.article = dict((k, v)
+                                             for k, v in article.__dict__.items()
+                                             if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
+                                             )
+        except ArticleException:
+            self._pocket_item.article = {}
 
 
 class PocketTopicScraper:
-    def __init__(self, topic):
-        self.topic = topic
+    def __init__(self, topic,
+                 limit=None,
+                 collection=None,
+                 parse=False):
+        if isinstance(topic, str):
+            self._topic = PocketTopic(topic)
+        elif isinstance(topic, PocketTopic):
+            self._topic = topic
+        else:
+            raise TypeError
+
+        self.limit = limit
+        self.collection = collection
+        self.parse = parse
+
+        self.scrap()
+
+    @property
+    def topic(self):
+        return self._topic
+
 
     def _make_request(self, topic):
         html = req.get("http://getpocket.com/explore/{}".format(topic), headers={
@@ -54,67 +98,29 @@ class PocketTopicScraper:
         saves_counts = [int(a.text.replace(' saves', '').replace(',', '')) for a in
                         soup.find_all('div', class_='save_count')]
         images = [div.get('data-thumburl') for div in soup.find_all('div', class_='item_image')]
-        items = []
         for data_id, title, excerpt, saves_count, image in zip(data_ids[1::2], titles, excerpts, saves_counts, images):
+            if self.limit and len(self.topic.items) == self.limit:
+                break
             item = PocketItem(data_id)
             item.url = soup.find('a', attrs={'data-id': data_id}).get('data-saveurl')
             item.title = title
             item.excerpt = excerpt
             item.saves_count = saves_count
-            item.topic = self.topic.replace('%20', ' ')
+            item.topic = self.topic.label.replace('%20', ' ')
             item.saves_count_datetime = utc_now
-            items.append(item)
+            self._topic.items.append(item)
 
             try:
                 item.image = req.get(image, allow_redirects=True).url
             except Exception:
                 item.image = None
 
-            article_attributes = [
-                                  'title',
-                                  'text',
-                                  'top_img',
-                                  'meta_keywords',
-                                  'summary',
-                                  'additional_data',
-                                  'source_url',
-                                  'keywords',
-                                  'meta_img',
-                                  'publish_date',
-                                  'meta_favicon',
-                                  'movies',
-                                  'tags',
-                                  'authors',
-                                  'images',
-                                  'meta_description'
-                                  ]
-            try:
-                article = ArticleDownloader(item.url)
-                article.download()
-                item.article = dict((k, v) for k, v in article.__dict__.items() if k in article_attributes)
-                print(to_dict(item))
-            except ArticleException:
-                item.article = None
+            if self.parse:
+                PocketItemDownloader(item)
 
-        related_topics = []
+            self.collection.update({'item_id': item.item_id},
+                                   item.to_dict(), upsert=True)
+
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
-                related_topics.append(a.text)
-
-        return {
-            'items': list(map(to_dict, items)),
-            'related_topics': related_topics,
-            'count': len(items)
-        }
-
-
-if __name__ == '__main__':
-    # Download Article
-    #a = ArticleDownloader('https://www.nytimes.com/2016/01/10/opinion/sunday/you-dont-need-more-free-time.html')
-    #a.download()
-    #from json import dumps
-
-    #print(dumps(dict((k, v) for k, v in a.__dict__.items() if k in article_attributes), indent=4))
-    res = PocketTopicScraper('finance').scrap()
-    from pprint import pprint
-    pprint(res)
+                self._topic.related_topics.append(PocketTopic(a.text))
