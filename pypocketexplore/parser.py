@@ -118,9 +118,8 @@ class PocketTopicScraper:
             if self.parse:
                 PocketItemDownloader(item)
 
-            print("Saving item {} from topic {}".format(item.title, self.topic.label))
-            self.collection.update({'item_id': item.item_id},
-                                   item.to_dict(), upsert=True)
+        print("Saving {} item {} from topic {}".format(len(self._topic.items), self.topic.label))
+        self.collection.insert_many([item.to_dict() for item in self._topic.items])
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
