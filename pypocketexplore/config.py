@@ -1,12 +1,6 @@
-from pymongo import MongoClient
-from redis import StrictRedis
-from rq import Queue
-
-MONGO_URI = 'mongodb://localhost:27017/pocket-topics'
-db = MongoClient(MONGO_URI).get_default_database()
-redis = StrictRedis()
-
-ITEMS_COLLECTION = db.get_collection('pocket.items')
-TOPICS_COLLECTION = db.get_collection('pocket.topics')
-ITEMS_QUEUE = Queue('pocket.items', connection=StrictRedis())
-TOPICS_QUEUE = Queue('pocket.topics', connection=StrictRedis())
+API_BIND_URL = 'http://localhost:5000'
+MONGO_URI = 'mongodb://localhost:27017/pypocketexplore'
+ITEMS_COLLECTION_NAME = 'pypocketexplore.items'
+TOPICS_COLLECTION_NAME = 'pypocketexplore.topics'
+TOPICS_QUEUE_NAME = 'pypocketexplore.topics'
+REDIS_HOST = 'redis://localhost:6379'

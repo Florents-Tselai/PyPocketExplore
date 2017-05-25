@@ -9,6 +9,7 @@ import requests as req
 from bs4 import BeautifulSoup
 from datetime import datetime
 from newspaper import Article, ArticleException
+from tqdm import tqdm
 
 from pypocketexplore.model import PocketItem, PocketTopic
 
@@ -98,21 +99,23 @@ class PocketTopicScraper:
         saves_counts = [int(a.text.replace(' saves', '').replace(',', '')) for a in
                         soup.find_all('div', class_='save_count')]
         images = [div.get('data-thumburl') for div in soup.find_all('div', class_='item_image')]
-        for data_id, title, excerpt, saves_count, image in zip(data_ids[1::2], titles, excerpts, saves_counts, images):
-            if self.limit and len(self.topic.items) == self.limit:
+        for data_id, title, excerpt, saves_count, image in tqdm(zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
+            if self.limit and len(self.topic.items) >= self.limit:
                 break
             item = PocketItem(data_id)
+
+            self._topic.items.append(item)
+
             item.url = soup.find('a', attrs={'data-id': data_id}).get('data-saveurl')
             item.title = title
             item.excerpt = excerpt
             item.saves_count = saves_count
             item.topic = self.topic.label.replace('%20', ' ')
             item.saves_count_datetime = utc_now
-            self._topic.items.append(item)
 
             try:
                 item.image = req.get(image, allow_redirects=True).url
-            except Exception:
+            except req.RequestException:
                 item.image = None
 
             if self.parse:
