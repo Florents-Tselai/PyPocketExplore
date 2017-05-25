@@ -27,9 +27,9 @@ def get_topic(topic):
         job = download_topic_items.delay(label, limit, parse)
         return jsonify({'topic': topic, 'job_id': job.get_id()})
 
-    db = Mon
+    db = MongoClient(config.MONGO_URI).get_default_database()
     topic = PocketTopic(label)
-    PocketTopicScraper(topic, limit, items_collection, parse)
+    PocketTopicScraper(topic, limit, db.get_collection(config.ITEMS_COLLECTION_NAME), parse)
 
     return jsonify(topic.to_dict())
 
