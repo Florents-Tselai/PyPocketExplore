@@ -20,7 +20,7 @@ def download_topic_items(topic_label):
             pass
         else:
             resp = req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic.label))
-            print(resp)
+            print('Enqueuing related topic {}'.format(related_topic.label))
 
 if __name__ == '__main__':
     pass

@@ -118,6 +118,7 @@ class PocketTopicScraper:
             if self.parse:
                 PocketItemDownloader(item)
 
+            print("Saving item {} from topic {}".format(item.title, self.topic.label))
             self.collection.update({'item_id': item.item_id},
                                    item.to_dict(), upsert=True)
 
