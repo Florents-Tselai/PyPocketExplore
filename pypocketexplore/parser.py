@@ -115,7 +115,8 @@ class PocketTopicScraper:
                 current_item.image = None
 
             if self.parse:
-                current_item.article = PocketArticleDownloader(current_item).download()
+                article = PocketArticleDownloader(current_item).download()
+                current_item.article = article
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
