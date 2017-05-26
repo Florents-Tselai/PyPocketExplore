@@ -7,7 +7,7 @@ from pypocketexplore.parser import PocketTopicScraper
 import requests as req
 
 
-@job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST), timeout=10*24*3600, result_ttl=10*24*3600, ttl=10*24*3600)
+@job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT), timeout=10*24*3600, result_ttl=10*24*3600, ttl=10*24*3600)
 def download_topic_items(topic_label, limit, parse):
     items_collection = MongoClient(config.MONGO_URI).get_default_database().get_collection(config.ITEMS_COLLECTION_NAME)
     redis_con = get_current_connection()
