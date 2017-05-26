@@ -94,7 +94,7 @@ class PocketTopic:
 
     @related_topics.setter
     def related_topics(self, related_topics):
-        self.related_topics = related_topics
+        self._related_topics = related_topics
 
     @property
     def label(self):
@@ -103,6 +103,10 @@ class PocketTopic:
     @property
     def items(self):
         return self._items
+
+    @items.setter
+    def items(self, items):
+        self._items = items
 
     def to_dict(self):
         return {

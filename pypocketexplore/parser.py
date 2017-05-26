@@ -66,30 +66,25 @@ class PocketTopicScraper:
                  limit=None,
                  parse=False):
         if isinstance(topic_label, str):
-            self._topic = PocketTopic(topic_label)
+            self._topic_label = topic_label
         else:
             raise TypeError('Can only pass str')
 
         self.limit = limit
         self.parse = parse
 
-        self.scrap()
-
-    @property
-    def topic(self):
-        return self._topic
-
-    def _make_request(self, topic):
-        html = req.get("http://getpocket.com/explore/{}".format(topic), headers={
+    def _make_request(self):
+        html = req.get("http://getpocket.com/explore/{}".format(self._topic_label), headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
         }).content
 
         return html
 
     def scrap(self):
-        html = self._make_request(self.topic)
+        html = self._make_request()
         utc_now = datetime.utcnow().timestamp()
         soup = BeautifulSoup(html, 'html.parser')
+
         data_ids = [a.get('data-id') for a in soup.find_all('a', class_='link_track')]
         titles = [a.text for a in soup.find_all('a', class_='link_track') if a.text != '\n \n']
         excerpts = [p.text for p in soup.find_all('p', class_='excerpt')]
@@ -97,17 +92,20 @@ class PocketTopicScraper:
                         soup.find_all('div', class_='save_count')]
         images = [div.get('data-thumburl') for div in soup.find_all('div', class_='item_image')]
 
+        pocket_items = []
+        related_topics_labels = []
         for item_id, title, excerpt, saves_count, image in tqdm(zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
-            if self.limit and len(self.topic.items) >= self.limit:
+            if self.limit and len(pocket_items) >= self.limit:
                 break
             print('Downloading item {}'.format(item_id))
             current_item = PocketItem(item_id)
+            pocket_items.append(current_item)
 
             current_item.url = soup.find('a', attrs={'data-id': item_id}).get('data-saveurl')
             current_item.title = title
             current_item.excerpt = excerpt
             current_item.saves_count = saves_count
-            current_item.topic = self.topic.label.replace('%20', ' ')
+            current_item.topic = self._topic_label.replace('%20', ' ')
             current_item.saves_count_datetime = utc_now
 
             try:
@@ -118,10 +116,16 @@ class PocketTopicScraper:
             if self.parse:
                 PocketItemDownloader(current_item)
 
-            self._topic.items.append(current_item)
-
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
-                self._topic.related_topics.append(PocketTopic(a.text))
+                related_topics_labels.append(a.text)
 
-        return self.topic
+        scraped_topic = PocketTopic(self._topic_label)
+        scraped_topic.items = pocket_items
+        scraped_topic.related_topics = [PocketTopic(l) for l in related_topics_labels]
+
+        return scraped_topic
+
+
+if __name__ == '__main__':
+    print(PocketTopicScraper('python', limit=10).scrap().to_dict())

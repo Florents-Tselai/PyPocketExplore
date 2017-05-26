@@ -27,10 +27,9 @@ def get_topic(topic):
         job = download_topic_items.delay(label, limit, parse)
         return jsonify({'topic': topic, 'job_id': job.get_id()})
 
-    topic_scraper = PocketTopicScraper(topic, limit, parse)
-    topic = topic_scraper.topic
+    topic_scraped = PocketTopicScraper(topic, limit, parse).scrap()
 
-    return jsonify(topic.to_dict())
+    return jsonify(topic_scraped.to_dict())
 
 
 def main():
