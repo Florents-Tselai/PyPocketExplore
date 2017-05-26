@@ -10,8 +10,10 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from newspaper import Article, ArticleException
 from tqdm import tqdm
+from pymongo import MongoClient
 
 from pypocketexplore.model import PocketItem, PocketTopic
+from pypocketexplore.config import MONGO_URI, ITEMS_COLLECTION_NAME
 
 print = pprint
 
@@ -60,19 +62,15 @@ class PocketItemDownloader:
 
 
 class PocketTopicScraper:
-    def __init__(self, topic,
+    def __init__(self, topic_label,
                  limit=None,
-                 collection=None,
                  parse=False):
-        if isinstance(topic, str):
-            self._topic = PocketTopic(topic)
-        elif isinstance(topic, PocketTopic):
-            self._topic = topic
+        if isinstance(topic_label, str):
+            self._topic = PocketTopic(topic_label)
         else:
-            raise TypeError
+            raise TypeError('Can only pass str')
 
         self.limit = limit
-        self.collection = collection
         self.parse = parse
 
         self.scrap()
@@ -80,7 +78,6 @@ class PocketTopicScraper:
     @property
     def topic(self):
         return self._topic
-
 
     def _make_request(self, topic):
         html = req.get("http://getpocket.com/explore/{}".format(topic), headers={
@@ -99,29 +96,32 @@ class PocketTopicScraper:
         saves_counts = [int(a.text.replace(' saves', '').replace(',', '')) for a in
                         soup.find_all('div', class_='save_count')]
         images = [div.get('data-thumburl') for div in soup.find_all('div', class_='item_image')]
-        for data_id, title, excerpt, saves_count, image in tqdm(zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
+
+        for item_id, title, excerpt, saves_count, image in tqdm(zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
             if self.limit and len(self.topic.items) >= self.limit:
                 break
-            item = PocketItem(data_id)
+            print('Downloading item {}'.format(item_id))
+            current_item = PocketItem(item_id)
 
-            self._topic.items.append(item)
-
-            item.url = soup.find('a', attrs={'data-id': data_id}).get('data-saveurl')
-            item.title = title
-            item.excerpt = excerpt
-            item.saves_count = saves_count
-            item.topic = self.topic.label.replace('%20', ' ')
-            item.saves_count_datetime = utc_now
+            current_item.url = soup.find('a', attrs={'data-id': item_id}).get('data-saveurl')
+            current_item.title = title
+            current_item.excerpt = excerpt
+            current_item.saves_count = saves_count
+            current_item.topic = self.topic.label.replace('%20', ' ')
+            current_item.saves_count_datetime = utc_now
 
             try:
-                item.image = req.get(image, allow_redirects=True).url
+                current_item.image = req.get(image, allow_redirects=True).url
             except req.RequestException:
-                item.image = None
+                current_item.image = None
 
             if self.parse:
-                PocketItemDownloader(item)
-            self.collection.update({'item_id': item.item_id}, item.to_dict(), upsert=True)
+                PocketItemDownloader(current_item)
+
+            self._topic.items.append(current_item)
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
                 self._topic.related_topics.append(PocketTopic(a.text))
+
+        return self.topic

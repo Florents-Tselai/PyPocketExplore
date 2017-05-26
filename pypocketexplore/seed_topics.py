@@ -19,11 +19,9 @@ def main():
 
     for topic in topics:
         resp = req.get('http://localhost:5000/api/topic/{}?async=true'.format(topic))
-        print(resp)
+        print(resp.json())
 
     print("Finished! Fetched {} topics labels".format(len(topics)))
-
-
 
 if __name__ == '__main__':
     main()
