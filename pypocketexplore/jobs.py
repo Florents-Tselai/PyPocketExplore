@@ -28,7 +28,7 @@ def download_topic_items(topic_label, limit, parse):
             pass
         else:
             print('Enqueuing related topic {}'.format(related_topic.label))
-            resp = req.get('http://localhost:5000/api/topic/{}?async=true'.format(related_topic.label))
+            resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=true'.format(related_topic.label))
             print(resp.json())
 
 if __name__ == '__main__':
