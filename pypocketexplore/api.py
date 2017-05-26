@@ -29,7 +29,7 @@ def get_topic(topic):
 
     topic_scraper = PocketTopicScraper(topic, limit, parse)
     topic = topic_scraper.topic
-    
+
     return jsonify(topic.to_dict())
 
 
