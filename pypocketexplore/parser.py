@@ -18,7 +18,7 @@ from pypocketexplore.config import MONGO_URI, ITEMS_COLLECTION_NAME
 print = pprint
 
 
-class PocketItemDownloader:
+class PocketArticleDownloader:
     ARTICLE_ATTRIBUTES_TO_KEEP = [
         'title',
         'text',
@@ -41,6 +41,7 @@ class PocketItemDownloader:
     def __init__(self, pocket_item):
         self._pocket_item = pocket_item
 
+    def download(self):
         try:
             article = Article(self._pocket_item.url)
             article.download()
@@ -53,12 +54,11 @@ class PocketItemDownloader:
 
             article.images = list(article.images)
 
-            self._pocket_item.article = dict((k, v)
-                                             for k, v in article.__dict__.items()
-                                             if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
-                                             )
+            return dict((k, v) for k, v in article.__dict__.items()
+                        if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
+                        )
         except ArticleException:
-            self._pocket_item.article = {}
+            return {}
 
 
 class PocketTopicScraper:
@@ -94,7 +94,8 @@ class PocketTopicScraper:
 
         pocket_items = []
         related_topics_labels = []
-        for item_id, title, excerpt, saves_count, image in tqdm(zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
+        for item_id, title, excerpt, saves_count, image in tqdm(
+                zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
             if self.limit and len(pocket_items) >= self.limit:
                 break
             print('Downloading item {}'.format(item_id))
@@ -114,7 +115,7 @@ class PocketTopicScraper:
                 current_item.image = None
 
             if self.parse:
-                PocketItemDownloader(current_item)
+                current_item.article = PocketArticleDownloader(current_item).download()
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
