@@ -3,3 +3,7 @@
 *pyc
 *.rdb
 build/
+PyPocketExplore.egg-info/
+*out
+/build
+/dist
