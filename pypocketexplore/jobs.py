@@ -25,6 +25,7 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 log = logger
 
+
 @job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT), timeout=10*24*3600, result_ttl=10*24*3600, ttl=10*24*3600)
 def download_topic_items(topic_label, limit, parse):
     items_collection = MongoClient(config.MONGO_URI).get_default_database().get_collection(config.ITEMS_COLLECTION_NAME)
@@ -37,8 +38,9 @@ def download_topic_items(topic_label, limit, parse):
         log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
         items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
     else:
-        log.warning('{} items downloaded for topic {}'.format(len(topic_scraped.items),
+        log.exception('{} items downloaded for topic {}'.format(len(topic_scraped.items),
                                                               topic_scraped.label))
+        raise Exception('No topics downloaded for topic {}'.format(topic_scraped.label))
 
 
     # Mark topic as scraped
