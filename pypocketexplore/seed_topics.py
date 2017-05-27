@@ -18,7 +18,7 @@ def main():
             topics.add(td.text)
 
     for topic in topics:
-        resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=false'.format(topic))
+        resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=true'.format(topic))
         print(resp.json())
 
     print("Finished! Fetched {} topics labels".format(len(topics)))

@@ -11,11 +11,30 @@ from datetime import datetime
 from newspaper import Article, ArticleException
 from tqdm import tqdm
 from pymongo import MongoClient
+import logging
 
 from pypocketexplore.model import PocketItem, PocketTopic
 from pypocketexplore.config import MONGO_URI, ITEMS_COLLECTION_NAME
 
 print = pprint
+
+# create logger with ''
+logger = logging.getLogger('pypocketexplore.parser')
+logger.setLevel(logging.INFO)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('pypocketexplore.parser.log')
+fh.setLevel(logging.INFO)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+log = logger
 
 
 class PocketArticleDownloader:
@@ -58,6 +77,7 @@ class PocketArticleDownloader:
                         if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
                         )
         except ArticleException:
+            log.warning('Could not download article for {}'.format(self._pocket_item.url))
             return {}
 
 
@@ -72,6 +92,7 @@ class PocketTopicScraper:
 
         self.limit = limit
         self.parse = parse
+        log.info('Topic {} | limit {} | parse {}'.format(topic_label, self.limit, self.parse))
 
     def _make_request(self):
         html = req.get("http://getpocket.com/explore/{}".format(self._topic_label), headers={
@@ -98,7 +119,7 @@ class PocketTopicScraper:
                 zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
             if self.limit and len(pocket_items) >= self.limit:
                 break
-            print('Downloading item {}'.format(item_id))
+            log.info('Downloading item {}'.format(item_id))
             current_item = PocketItem(item_id)
             pocket_items.append(current_item)
 
@@ -115,6 +136,7 @@ class PocketTopicScraper:
                 current_item.image = None
 
             if self.parse:
+                log.info('Downloading article for {}'.format(item_id))
                 article = PocketArticleDownloader(current_item).download()
                 current_item.article = article
 
@@ -130,4 +152,4 @@ class PocketTopicScraper:
 
 
 if __name__ == '__main__':
-    print(PocketTopicScraper('python', limit=10).scrap().to_dict())
+    PocketTopicScraper('python', limit=10, parse=True).scrap().to_dict()

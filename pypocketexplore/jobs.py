@@ -5,7 +5,25 @@ from pymongo import MongoClient
 from pypocketexplore import config
 from pypocketexplore.parser import PocketTopicScraper
 import requests as req
+import logging
 
+# create logger with ''
+logger = logging.getLogger('pypocketexplore.jobs')
+logger.setLevel(logging.INFO)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('pypocketexplore.jobs.log')
+fh.setLevel(logging.INFO)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+log = logger
 
 @job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT), timeout=10*24*3600, result_ttl=10*24*3600, ttl=10*24*3600)
 def download_topic_items(topic_label, limit, parse):
@@ -15,8 +33,12 @@ def download_topic_items(topic_label, limit, parse):
     topic_scraped = scraper.scrap()
 
     # Save scraped items
-    print('{} items scraped'.format(len(topic_scraped.items)))
-    items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
+    if topic_scraped.items:
+        log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
+        items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
+    else:
+        log.warning('{} items downloaded for topic {}'.format(len(topic_scraped.items),
+                                                              topic_scraped.label))
 
 
     # Mark topic as scraped
@@ -27,11 +49,11 @@ def download_topic_items(topic_label, limit, parse):
         if redis_con.sismember('pypocketexplore.scraped_topics', related_topic.label) or is_in_queue:
             pass
         else:
-            print('Enqueuing related topic {}'.format(related_topic.label))
-            resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=false'.format(related_topic.label))
-            print(resp.json())
+            log.info('Enqueuing related topic {}'.format(related_topic.label))
+            resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=true'.format(related_topic.label))
+            log.info(resp.json())
 
 if __name__ == '__main__':
     for topic in ['sex', 'love', 'music']:
-        download_topic_items.delay(topic, 10, False)
+        download_topic_items(topic, 10, True)
 
