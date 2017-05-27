@@ -86,7 +86,7 @@ class PocketTopicScraper:
                  limit=None,
                  parse=False):
         if isinstance(topic_label, str):
-            self._topic_label = topic_label
+            self._topic_label = topic_label.replace(' ', '%20')
         else:
             raise TypeError('Can only pass str')
 
