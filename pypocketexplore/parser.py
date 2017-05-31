@@ -34,6 +34,8 @@ logger.addHandler(fh)
 logger.addHandler(ch)
 log = logger
 
+class InvalidTopicException(Exception):
+    pass
 
 class PocketArticleDownloader:
     ARTICLE_ATTRIBUTES_TO_KEEP = [
@@ -103,6 +105,11 @@ class PocketTopicScraper:
         html = self._make_request()
         utc_now = datetime.utcnow().timestamp()
         soup = BeautifulSoup(html, 'html.parser')
+
+        if soup.find('p') == 'The topic you searched for isn’t available on Pocket’s explore page yet. ' \
+                             'Thanks for alerting us to it, ' \
+                             'we’ll be continuing to add support for more topics!':
+            raise InvalidTopicException
 
         data_ids = [a.get('data-id') for a in soup.find_all('a', class_='link_track')]
         titles = [a.text for a in soup.find_all('a', class_='link_track') if a.text != '\n \n']

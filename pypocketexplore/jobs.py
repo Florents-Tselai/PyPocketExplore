@@ -9,7 +9,7 @@ from rq.decorators import job
 from pypocketexplore import config
 from pypocketexplore import logger
 from pypocketexplore.config import API_BIND_URL
-from pypocketexplore.parser import PocketTopicScraper
+from pypocketexplore.parser import PocketTopicScraper, InvalidTopicException
 
 
 @job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT), timeout=10 * 24 * 3600,
@@ -22,16 +22,14 @@ def download_topic_items(topic_label,
     redis_con = get_current_connection() if get_current_connection() else StrictRedis(config.REDIS_HOST,
                                                                                       config.REDIS_PORT)
     scraper = PocketTopicScraper(topic_label, limit, parse)
-    topic_scraped = scraper.scrap()
 
-    # Save scraped items
-    if topic_scraped.items:
+    try:
+        topic_scraped = scraper.scrap()
         log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
         items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
-    else:
-        log.error('{} items downloaded for topic {}'.format(len(topic_scraped.items),
-                                                            topic_scraped.label))
-        raise Exception('No topics downloaded for topic {}'.format(topic_scraped.label))
+
+    except InvalidTopicException:
+        log.info('Invalid topic {}'.format(topic_label))
 
     # Mark topic as scraped
     redis_con.sadd('pypocketexplore.scraped_topics', topic_label)
