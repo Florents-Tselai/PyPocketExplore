@@ -3,9 +3,8 @@
 
 import requests as req
 from bs4 import BeautifulSoup
-from redis import StrictRedis
-from rq import Queue
-from tqdm import tqdm
+
+from pypocketexplore.config import API_BIND_URL
 
 
 def main():
@@ -18,10 +17,11 @@ def main():
             topics.add(td.text)
 
     for topic in topics:
-        resp = req.get('http://localhost:5000/api/topic/{}?async=true&parse=true'.format(topic))
+        resp = req.get('{}/api/topic/{}?async=true&parse=true'.format(API_BIND_URL, topic))
         print(resp.json())
 
     print("Finished! Fetched {} topics labels".format(len(topics)))
+
 
 if __name__ == '__main__':
     main()

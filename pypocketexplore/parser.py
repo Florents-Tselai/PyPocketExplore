@@ -3,6 +3,7 @@
 
 __author__ = 'Florents Tselai'
 
+import logging
 from pprint import pprint
 
 import requests as req
@@ -10,11 +11,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from newspaper import Article, ArticleException
 from tqdm import tqdm
-from pymongo import MongoClient
-import logging
 
 from pypocketexplore.model import PocketItem, PocketTopic
-from pypocketexplore.config import MONGO_URI, ITEMS_COLLECTION_NAME
 
 print = pprint
 

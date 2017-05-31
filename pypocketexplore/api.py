@@ -4,11 +4,8 @@
 __author__ = 'Florents Tselai'
 
 from flask import Flask, jsonify, request
-from pymongo import MongoClient
 
-from pypocketexplore import config
 from pypocketexplore.jobs import download_topic_items
-from pypocketexplore.model import PocketTopic
 from pypocketexplore.parser import PocketTopicScraper
 
 app = Flask(__name__)
