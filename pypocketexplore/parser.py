@@ -147,7 +147,3 @@ class PocketTopicScraper:
         scraped_topic.related_topics = [PocketTopic(l) for l in related_topics_labels]
 
         return scraped_topic
-
-
-if __name__ == '__main__':
-    PocketTopicScraper('python', limit=10, parse=True).scrap().to_dict()

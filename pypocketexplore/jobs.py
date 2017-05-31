@@ -1,3 +1,5 @@
+__author__ = 'Florents Tselai'
+
 import requests as req
 from pymongo import MongoClient
 from redis import StrictRedis

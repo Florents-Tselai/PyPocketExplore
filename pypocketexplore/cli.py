@@ -1,3 +1,5 @@
+__author__ = 'Florents Tselai'
+
 import json
 from logging import ERROR
 

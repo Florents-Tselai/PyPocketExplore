@@ -1,9 +1,10 @@
 from __future__ import absolute_import
-__all__ = ['cli', 'api', 'model', 'parser']
 
+__author__ = 'Florents Tselai'
 
 import logging
 
+__all__ = ['cli', 'api', 'model', 'parser']
 
 
 def setup_logger():
@@ -24,5 +25,6 @@ def setup_logger():
     logger.addHandler(fh)
     logger.addHandler(ch)
     return logger
+
 
 log = logger = setup_logger()
