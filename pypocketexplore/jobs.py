@@ -25,11 +25,12 @@ def download_topic_items(topic_label,
 
     try:
         topic_scraped = scraper.scrap()
-        log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
-        items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
 
     except InvalidTopicException:
         log.info('Invalid topic {}'.format(topic_label))
+
+        log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
+        items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
 
     # Mark topic as scraped
     redis_con.sadd('pypocketexplore.scraped_topics', topic_label)
