@@ -25,12 +25,13 @@ def download_topic_items(topic_label,
 
     try:
         topic_scraped = scraper.scrap()
-
     except InvalidTopicException:
         log.info('Invalid topic {}'.format(topic_label))
 
-        log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
-        items_collection.insert_many([item.to_dict() for item in topic_scraped.items])
+    log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
+    for item in topic_scraped.items:
+        items_collection.update({'item_id': item.item_id, 'topic': topic_label}, item.to_dict(), upsert=True)
+
 
     # Mark topic as scraped
     redis_con.sadd('pypocketexplore.scraped_topics', topic_label)
@@ -44,8 +45,3 @@ def download_topic_items(topic_label,
             log.info('Enqueuing related topic {}'.format(related_topic.label))
             resp = req.get('{}/api/topic/{}?async=true&parse=true'.format(API_BIND_URL, related_topic.label))
             log.info(resp.json())
-
-
-if __name__ == '__main__':
-    for topic in ['sex', 'love', 'music']:
-        download_topic_items(topic, 10, True)
