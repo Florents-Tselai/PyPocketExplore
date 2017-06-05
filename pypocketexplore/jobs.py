@@ -32,7 +32,7 @@ def download_topic_items(topic_label,
 
         log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
         for item in topic_scraped.items:
-            items_collection.update_many({'item_id': item.item_id, 'topic': topic_label}, item.to_dict(), upsert=True)
+            items_collection.update_many({'item_id': item.item_id, 'topic': topic_label}, {'$set': item.to_dict()}, upsert=True)
     except InvalidTopicException:
         log.info('Invalid topic {}'.format(topic_label))
 
