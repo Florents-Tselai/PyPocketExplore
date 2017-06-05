@@ -29,6 +29,3 @@ def setup_logger(name):
     logger.addHandler(stream_handler)
 
     return logger
-
-
-log = logger = setup_logger()
