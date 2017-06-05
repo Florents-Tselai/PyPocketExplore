@@ -7,7 +7,6 @@ from rq import get_current_connection, Queue
 from rq.decorators import job
 
 from pypocketexplore import config
-from pypocketexplore import logger
 from pypocketexplore.config import API_BIND_URL
 from pypocketexplore.parser import PocketTopicScraper, InvalidTopicException
 from pypocketexplore import setup_logger
