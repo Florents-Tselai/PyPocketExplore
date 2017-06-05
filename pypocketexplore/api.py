@@ -7,8 +7,10 @@ from flask import Flask, jsonify, request
 
 from pypocketexplore.jobs import download_topic_items
 from pypocketexplore.parser import PocketTopicScraper
+from pypocketexplore import setup_logger
 
 app = Flask(__name__)
+app.logger.handlers.extend(setup_logger(__name__).handlers)
 
 
 @app.route("/api/topic/<topic>", methods=["GET"])

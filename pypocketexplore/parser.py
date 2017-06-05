@@ -13,26 +13,12 @@ from newspaper import Article, ArticleException
 from tqdm import tqdm
 
 from pypocketexplore.model import PocketItem, PocketTopic
+from pypocketexplore import setup_logger
 
 print = pprint
 
-# create logger with ''
-logger = logging.getLogger('pypocketexplore.parser')
-logger.setLevel(logging.INFO)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('pypocketexplore.parser.log')
-fh.setLevel(logging.INFO)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
-log = logger
+log = logger = setup_logger(__name__)
+
 
 class InvalidTopicException(Exception):
     pass

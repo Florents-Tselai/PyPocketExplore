@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-
+from logging import handlers
 __author__ = 'Florents Tselai'
 
 import logging
@@ -7,23 +7,27 @@ import logging
 __all__ = ['cli', 'api', 'model', 'parser']
 
 
-def setup_logger():
-    # create logger with ''
-    logger = logging.getLogger('pypocketexplore')
+def setup_logger(name):
+    # create a logging format
+    formatter = logging.Formatter(
+        '%(asctime)s - PID:%(process)d - %(name)s.py:%(funcName)s:%(lineno)d - %(levelname)s - %(message)s')
+
+    logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler('pypocketexplore.log')
-    fh.setLevel(logging.INFO)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    # add the handlers to the logger
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+
+    # create a file handler
+    file_handler = handlers.RotatingFileHandler('{}.log'.format(name), maxBytes=1024 * 1024 * 100, backupCount=20)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+
+    logger.addHandler(stream_handler)
+
     return logger
 
 

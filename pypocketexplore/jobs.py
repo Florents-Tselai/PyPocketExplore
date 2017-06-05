@@ -10,14 +10,19 @@ from pypocketexplore import config
 from pypocketexplore import logger
 from pypocketexplore.config import API_BIND_URL
 from pypocketexplore.parser import PocketTopicScraper, InvalidTopicException
+from pypocketexplore import setup_logger
+
+log = setup_logger(__name__)
 
 
-@job(config.TOPICS_QUEUE_NAME, connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT), timeout=10 * 24 * 3600,
-     result_ttl=10 * 24 * 3600, ttl=10 * 24 * 3600)
+@job(config.TOPICS_QUEUE_NAME,
+     connection=StrictRedis(config.REDIS_HOST, config.REDIS_PORT),
+     timeout=10 * 24 * 3600,
+     result_ttl=10 * 24 * 3600,
+     ttl=10 * 24 * 3600)
 def download_topic_items(topic_label,
                          limit,
-                         parse,
-                         log=logger):
+                         parse):
     items_collection = MongoClient(config.MONGO_URI).get_default_database().get_collection(config.ITEMS_COLLECTION_NAME)
     redis_con = get_current_connection() if get_current_connection() else StrictRedis(config.REDIS_HOST,
                                                                                       config.REDIS_PORT)
@@ -25,13 +30,12 @@ def download_topic_items(topic_label,
 
     try:
         topic_scraped = scraper.scrap()
+
+        log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
+        for item in topic_scraped.items:
+            items_collection.update_many({'item_id': item.item_id, 'topic': topic_label}, item.to_dict(), upsert=True)
     except InvalidTopicException:
         log.info('Invalid topic {}'.format(topic_label))
-
-    log.info('Saving {} items to mongo'.format(len(topic_scraped.items)))
-    for item in topic_scraped.items:
-        items_collection.update({'item_id': item.item_id, 'topic': topic_label}, item.to_dict(), upsert=True)
-
 
     # Mark topic as scraped
     redis_con.sadd('pypocketexplore.scraped_topics', topic_label)
