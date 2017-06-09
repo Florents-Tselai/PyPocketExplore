@@ -3,17 +3,17 @@
 
 __author__ = 'Florents Tselai'
 
-import logging
+import threading
+from datetime import datetime
 from pprint import pprint
 
 import requests as req
 from bs4 import BeautifulSoup
-from datetime import datetime
 from newspaper import Article, ArticleException
 from tqdm import tqdm
 
-from pypocketexplore.model import PocketItem, PocketTopic
 from pypocketexplore import setup_logger
+from pypocketexplore.model import PocketItem, PocketTopic
 
 print = pprint
 
@@ -23,7 +23,10 @@ log = logger = setup_logger(__name__)
 class InvalidTopicException(Exception):
     pass
 
-class PocketArticleDownloader:
+class TooManyRequestsError(Exception):
+    pass
+
+class PocketArticleDownloader(threading.Thread):
     ARTICLE_ATTRIBUTES_TO_KEEP = [
         'title',
         'text',
@@ -44,6 +47,7 @@ class PocketArticleDownloader:
     ]
 
     def __init__(self, pocket_item):
+        super().__init__()
         self._pocket_item = pocket_item
 
     def download(self):
@@ -59,12 +63,15 @@ class PocketArticleDownloader:
 
             article.images = list(article.images)
 
-            return dict((k, v) for k, v in article.__dict__.items()
-                        if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
-                        )
+            self._pocket_item.article = dict((k, v) for k, v in article.__dict__.items()
+                                             if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
+                                             )
         except ArticleException:
             log.warning('Could not download article for {}'.format(self._pocket_item.url))
             return {}
+
+    def run(self):
+        self.download()
 
 
 class PocketTopicScraper:
@@ -81,11 +88,14 @@ class PocketTopicScraper:
         log.info('Topic {} | limit {} | parse {}'.format(topic_label, self.limit, self.parse))
 
     def _make_request(self):
-        html = req.get("http://getpocket.com/explore/{}".format(self._topic_label), headers={
+        response = req.get("http://getpocket.com/explore/{}".format(self._topic_label), headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
-        }).content
+        })
 
-        return html
+        if not response.ok and response.status_code == 429:
+            raise TooManyRequestsError
+
+        return response.content
 
     def scrap(self):
         html = self._make_request()
@@ -106,6 +116,7 @@ class PocketTopicScraper:
 
         pocket_items = []
         related_topics_labels = []
+        article_downloaders = []
         for item_id, title, excerpt, saves_count, image in tqdm(
                 zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
             if self.limit and len(pocket_items) >= self.limit:
@@ -128,8 +139,12 @@ class PocketTopicScraper:
 
             if self.parse:
                 log.info('Downloading article for {}'.format(item_id))
-                article = PocketArticleDownloader(current_item).download()
-                current_item.article = article
+                article_downloader = PocketArticleDownloader(current_item)
+                article_downloader.start()
+                article_downloaders.append(article_downloader)
+
+        for t in article_downloaders:
+            t.join()
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
@@ -140,3 +155,7 @@ class PocketTopicScraper:
         scraped_topic.related_topics = [PocketTopic(l) for l in related_topics_labels]
 
         return scraped_topic
+
+
+if __name__ == '__main__':
+    PocketTopicScraper('python', parse=True).scrap()
