@@ -7,6 +7,7 @@ import sys
 import click
 import requests as req
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
 
 from pypocketexplore.parser import PocketTopicScraper, logger, InvalidTopicException, TooManyRequestsError
 
@@ -36,7 +37,8 @@ def topic(label, limit, out, parse):
 @click.option('--limit', default=100, help='Limit items to download per topic')
 @click.option('--out', default='topics.json', help='JSON output fp')
 @click.option('--parse', is_flag=True, help='If set, also parses the html and runs it through NLTK')
-def batch(limit, out, n, parse):
+@click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore')
+def batch(limit, out, n, parse, mongo):
     html = req.get(
         "https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
     soup = BeautifulSoup(html, 'html.parser')
@@ -49,7 +51,7 @@ def batch(limit, out, n, parse):
 
     topics_already_scraped = set()
     items = []
-
+    mongo_collection = MongoClient(mongo).get_default_database().get_collection('items')
     logger.info(
         "Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
     while len(topics_to_scrap) > 0 and len(items) <= n:
@@ -72,6 +74,7 @@ def batch(limit, out, n, parse):
 
         topic_scraped = scraper.scrap()
         items.extend([i.to_dict() for i in topic_scraped.items])
+        mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
 
         for related in topic_scraped.related_topics:
             if related.label not in topics_already_scraped:
