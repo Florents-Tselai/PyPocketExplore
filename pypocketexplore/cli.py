@@ -1,13 +1,13 @@
 __author__ = 'Florents Tselai'
 
 import json
-from logging import ERROR
+from time import sleep
 
 import click
 import requests as req
 from bs4 import BeautifulSoup
+
 from pypocketexplore.parser import PocketTopicScraper, logger, InvalidTopicException, TooManyRequestsError
-from time import sleep
 
 
 @click.group()
@@ -15,7 +15,7 @@ def cli():
     pass
 
 
-@cli.command('topic')
+@cli.command('topic', help='Download for specific labels')
 @click.argument('label', nargs=-1)
 @click.option('--limit', default=100, help='Limit items to download')
 @click.option('--out', default='topics.json', help='JSON output fp')
@@ -30,8 +30,8 @@ def topic(label, limit, out, parse):
               sort_keys=True)
 
 
-@cli.command('batch')
-@click.option('--limit', default=100, help='Limit items to download')
+@cli.command('batch', help='Download topics recursively')
+@click.option('--limit', default=100, help='Limit items to download per topic')
 @click.option('--out', default='topics.json', help='JSON output fp')
 @click.option('--parse', is_flag=True, help='If set, also parses the html and runs it through NLTK')
 def batch(limit, out, parse):
@@ -48,9 +48,11 @@ def batch(limit, out, parse):
     topics_already_scraped = set()
     items = []
 
-    logger.info("Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
+    logger.info(
+        "Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
     while len(topics_to_scrap) > 0:
         current_topic = topics_to_scrap.pop()
+        logger.info("Working with topic {}".format(current_topic))
 
         try:
             scraper = PocketTopicScraper(current_topic, limit=limit, parse=parse)
@@ -74,12 +76,11 @@ def batch(limit, out, parse):
                 topics_to_scrap.add(related.label)
 
         topics_already_scraped.add(current_topic)
-        logger.info("Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap),
-                                                                 len(items)))
+        logger.info("Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped),
+                                                                  len(topics_to_scrap),
+                                                                  len(items))
+                    )
 
     json.dump(items, open(out, encoding='utf-8', mode='w'),
               indent=4,
               sort_keys=True)
-
-
-
