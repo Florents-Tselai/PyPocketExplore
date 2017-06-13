@@ -3,9 +3,6 @@
 
 from setuptools import setup
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setup(
     name='PyPocketExplore',
     version='1.0.0',
@@ -20,5 +17,5 @@ setup(
     author='Florents Tselai',
     author_email='florents.tselai@gmail.com',
     url='https://github.com/Florents-Tselai/PyPocketTopics',
-    install_requires=requirements
+    install_requires=open('requirements.txt').read().splitlines()
 )
