@@ -2,6 +2,7 @@ __author__ = 'Florents Tselai'
 
 import json
 from time import sleep
+import sys
 
 import click
 import requests as req
@@ -31,10 +32,11 @@ def topic(label, limit, out, parse):
 
 
 @cli.command('batch', help='Download topics recursively')
+@click.option('--n', default=sys.maxsize, help='Max number of items')
 @click.option('--limit', default=100, help='Limit items to download per topic')
 @click.option('--out', default='topics.json', help='JSON output fp')
 @click.option('--parse', is_flag=True, help='If set, also parses the html and runs it through NLTK')
-def batch(limit, out, parse):
+def batch(limit, out, n, parse):
     html = req.get(
         "https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
     soup = BeautifulSoup(html, 'html.parser')
@@ -50,7 +52,7 @@ def batch(limit, out, parse):
 
     logger.info(
         "Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
-    while len(topics_to_scrap) > 0:
+    while len(topics_to_scrap) > 0 and len(items) <= n:
         current_topic = topics_to_scrap.pop()
         logger.info("Working with topic {}".format(current_topic))
 
