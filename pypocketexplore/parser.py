@@ -52,9 +52,12 @@ class PocketArticleDownloader(threading.Thread):
 
     def download(self):
         try:
+            logger.info('Downloading article for {}'.format(self._pocket_item.url))
             article = Article(self._pocket_item.url)
             article.download()
+            logger.info('Parsing article for {}'.format(self._pocket_item.url))
             article.parse()
+            logger.info('Performing NLP on article for {}'.format(self._pocket_item.url))
             article.nlp()
 
             article.tags = list(article.tags)
@@ -143,9 +146,12 @@ class PocketTopicScraper:
                 article_downloader.start()
                 article_downloaders.append(article_downloader)
 
-        log.info('Waiting for ArticleDownloader threads to finish')
+        log.info('Waiting for {} ArticleDownloader threads to finish'.format(len(article_downloaders)))
         for t in article_downloaders:
             t.join()
+        log.info('{} Article downloaders finished'.format(len(article_downloaders)))
+
+
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
