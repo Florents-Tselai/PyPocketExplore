@@ -36,9 +36,9 @@ def topic(label, limit, out, parse):
 @click.option('--n', default=sys.maxsize, help='Max number of items')
 @click.option('--limit', default=100, help='Limit items to download per topic')
 @click.option('--out', default='topics.json', help='JSON output fp')
-@click.option('--parse', is_flag=True, help='If set, also parses the html and runs it through NLTK')
+@click.option('--parse', is_flag=True, default=True, help='If set, also parses the html and runs it through NLTK')
 @click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore')
-def batch(limit, out, n, parse, mongo):
+def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongodb://localhost:27017/pypocketexplore'):
     html = req.get(
         "https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
     soup = BeautifulSoup(html, 'html.parser')
@@ -52,6 +52,9 @@ def batch(limit, out, n, parse, mongo):
     topics_already_scraped = set()
     items = []
     mongo_collection = MongoClient(mongo).get_default_database().get_collection('items')
+    # Clear collection
+    mongo_collection.remove({})
+
     logger.info(
         "Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
     while len(topics_to_scrap) > 0 and len(items) <= n:
@@ -62,6 +65,7 @@ def batch(limit, out, n, parse, mongo):
             scraper = PocketTopicScraper(current_topic, limit=limit, parse=parse)
 
         except InvalidTopicException:
+            logger.warning('Invalid topic %s' % current_topic)
             topics_already_scraped.add(current_topic)
             continue
 
@@ -74,7 +78,8 @@ def batch(limit, out, n, parse, mongo):
 
         topic_scraped = scraper.scrap()
         items.extend([i.to_dict() for i in topic_scraped.items])
-        mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
+        insert_results = mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
+        logger.info("{} items inserted to mongo".format(len(insert_results.inserted_ids)))
 
         for related in topic_scraped.related_topics:
             if related.label not in topics_already_scraped:
@@ -89,3 +94,6 @@ def batch(limit, out, n, parse, mongo):
     json.dump(items, open(out, encoding='utf-8', mode='w'),
               indent=4,
               sort_keys=True)
+
+if __name__ == '__main__':
+    batch()

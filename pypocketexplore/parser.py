@@ -143,6 +143,7 @@ class PocketTopicScraper:
                 article_downloader.start()
                 article_downloaders.append(article_downloader)
 
+        log.info('Waiting for ArticleDownloader threads to finish')
         for t in article_downloaders:
             t.join()
 
