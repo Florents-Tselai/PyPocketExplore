@@ -78,8 +78,9 @@ def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongod
 
         topic_scraped = scraper.scrap()
         items.extend([i.to_dict() for i in topic_scraped.items])
-        insert_results = mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
-        logger.info("{} items inserted to mongo".format(len(insert_results.inserted_ids)))
+        if topic_scraped.items:
+            insert_results = mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
+            logger.info("{} items inserted to mongo".format(len(insert_results.inserted_ids)))
 
         for related in topic_scraped.related_topics:
             if related.label not in topics_already_scraped:
