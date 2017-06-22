@@ -112,6 +112,12 @@ class PocketTopic:
             'related_topics': [topic.label for topic in self.related_topics]
         }
 
+    def __iter__(self):
+        return iter(self.items)
+
+    def __len__(self):
+        return len(self.items)
+
 
 def to_dict(model):
     return dict((get_key(key), value)

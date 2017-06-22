@@ -1,10 +1,12 @@
 from __future__ import absolute_import
+
 from logging import handlers
+
 __author__ = 'Florents Tselai'
 
 import logging
 
-__all__ = ['cli', 'api', 'model', 'parser']
+__all__ = ['cli', 'api', 'model', 'parser', 'exceptions']
 
 
 def setup_logger(name):
@@ -15,13 +17,14 @@ def setup_logger(name):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    # create a file handler
+    # create a FileHandler
     file_handler = handlers.RotatingFileHandler('{}.log'.format(name), maxBytes=1024 * 1024 * 100, backupCount=20)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
 
+    # create StreamHandler
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.INFO)
     stream_handler.setFormatter(formatter)

@@ -1,11 +1,5 @@
-#!/usr/bin/env python3
-# -*- encoding: utf-8 -*-
-
-__author__ = 'Florents Tselai'
-
 import threading
 from datetime import datetime
-from pprint import pprint
 
 import requests as req
 from bs4 import BeautifulSoup
@@ -13,18 +7,11 @@ from newspaper import Article, ArticleException
 from tqdm import tqdm
 
 from pypocketexplore import setup_logger
+from pypocketexplore.exceptions import TooManyRequestsError, InvalidTopicError
 from pypocketexplore.model import PocketItem, PocketTopic
 
-print = pprint
+logger = setup_logger(__name__)
 
-log = logger = setup_logger(__name__)
-
-
-class InvalidTopicException(Exception):
-    pass
-
-class TooManyRequestsError(Exception):
-    pass
 
 class PocketArticleDownloader(threading.Thread):
     ARTICLE_ATTRIBUTES_TO_KEEP = [
@@ -70,7 +57,7 @@ class PocketArticleDownloader(threading.Thread):
                                              if k in self.ARTICLE_ATTRIBUTES_TO_KEEP
                                              )
         except ArticleException:
-            log.warning('Could not download article for {}'.format(self._pocket_item.url))
+            logger.warning('Could not download article for {}'.format(self._pocket_item.url))
             return {}
 
     def run(self):
@@ -88,7 +75,7 @@ class PocketTopicScraper:
 
         self.limit = limit
         self.parse = parse
-        log.info('Topic {} | limit {} | parse {}'.format(topic_label, self.limit, self.parse))
+        logger.info('Topic {} | limit {} | parse {}'.format(topic_label, self.limit, self.parse))
 
     def _make_request(self):
         response = req.get("http://getpocket.com/explore/{}".format(self._topic_label), headers={
@@ -108,7 +95,7 @@ class PocketTopicScraper:
         if soup.find('p') == 'The topic you searched for isn’t available on Pocket’s explore page yet. ' \
                              'Thanks for alerting us to it, ' \
                              'we’ll be continuing to add support for more topics!':
-            raise InvalidTopicException
+            raise InvalidTopicError
 
         data_ids = [a.get('data-id') for a in soup.find_all('a', class_='link_track')]
         titles = [a.text for a in soup.find_all('a', class_='link_track') if a.text != '\n \n']
@@ -124,7 +111,7 @@ class PocketTopicScraper:
                 zip(data_ids[1::2], titles, excerpts, saves_counts, images)):
             if self.limit and len(pocket_items) >= self.limit:
                 break
-            log.info('Downloading item {}'.format(item_id))
+            logger.info('Downloading item {}'.format(item_id))
             current_item = PocketItem(item_id)
             pocket_items.append(current_item)
 
@@ -141,17 +128,15 @@ class PocketTopicScraper:
                 current_item.image = None
 
             if self.parse:
-                log.info('Downloading article for {}'.format(item_id))
+                logger.info('Downloading article for {}'.format(item_id))
                 article_downloader = PocketArticleDownloader(current_item)
                 article_downloader.start()
                 article_downloaders.append(article_downloader)
 
-        log.info('Waiting for {} ArticleDownloader threads to finish'.format(len(article_downloaders)))
+        logger.info('Waiting for {} ArticleDownloader threads to finish'.format(len(article_downloaders)))
         for t in article_downloaders:
             t.join()
-        log.info('{} Article downloaders finished'.format(len(article_downloaders)))
-
-
+        logger.info('{} Article downloaders finished'.format(len(article_downloaders)))
 
         for a in soup.find_all('a'):
             if 'related_top' in a.get('href'):
@@ -162,7 +147,3 @@ class PocketTopicScraper:
         scraped_topic.related_topics = [PocketTopic(l) for l in related_topics_labels]
 
         return scraped_topic
-
-
-if __name__ == '__main__':
-    PocketTopicScraper('python', parse=True).scrap()

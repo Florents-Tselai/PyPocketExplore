@@ -1,15 +1,16 @@
-__author__ = 'Florents Tselai'
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
 
 import json
-from time import sleep
 import sys
+from time import sleep
 
 import click
 import requests as req
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 
-from pypocketexplore.parser import PocketTopicScraper, logger, InvalidTopicException, TooManyRequestsError
+from pypocketexplore.parser import PocketTopicScraper, logger, InvalidTopicError, TooManyRequestsError
 
 
 @click.group()
@@ -36,9 +37,9 @@ def topic(label, limit, out, parse):
 @click.option('--n', default=sys.maxsize, help='Max number of items')
 @click.option('--limit', default=100, help='Limit items to download per topic')
 @click.option('--out', default='topics.json', help='JSON output fp')
-@click.option('--parse', is_flag=True, default=True, help='If set, also parses the html and runs it through NLTK')
-@click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore')
-def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongodb://localhost:27017/pypocketexplore'):
+@click.option('--nlp', is_flag=True, default=True, help='If set, also parses the html and runs it through NLTK')
+@click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore', default=True, help='Mongo DB URI to save items')
+def batch(limit=100, out='topics.json', n=sys.maxsize, nlp=True, mongo=None):
     html = req.get(
         "https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
     soup = BeautifulSoup(html, 'html.parser')
@@ -51,9 +52,10 @@ def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongod
 
     topics_already_scraped = set()
     items = []
-    mongo_collection = MongoClient(mongo).get_default_database().get_collection('items')
-    # Clear collection
-    mongo_collection.remove({})
+    if mongo:
+        mongo_collection = MongoClient(mongo).get_default_database().get_collection('items')
+        # Clear collection
+        mongo_collection.remove({})
 
     logger.info(
         "Scraped {} | Remaining {} | Items {}".format(len(topics_already_scraped), len(topics_to_scrap), len(items)))
@@ -62,9 +64,9 @@ def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongod
         logger.info("Working with topic {}".format(current_topic))
 
         try:
-            scraper = PocketTopicScraper(current_topic, limit=limit, parse=parse)
+            scraper = PocketTopicScraper(current_topic, limit=limit, parse=nlp)
 
-        except InvalidTopicException:
+        except InvalidTopicError:
             logger.warning('Invalid topic %s' % current_topic)
             topics_already_scraped.add(current_topic)
             continue
@@ -78,9 +80,11 @@ def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongod
 
         topic_scraped = scraper.scrap()
         items.extend([i.to_dict() for i in topic_scraped.items])
-        if topic_scraped.items:
-            insert_results = mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items], bypass_document_validation=True)
-            logger.info("{} items inserted to mongo".format(len(insert_results.inserted_ids)))
+        if mongo:
+            if topic_scraped.items:
+                insert_results = mongo_collection.insert_many([i.to_dict() for i in topic_scraped.items],
+                                                              bypass_document_validation=True)
+                logger.info("{} items inserted to mongo".format(len(insert_results.inserted_ids)))
 
         for related in topic_scraped.related_topics:
             if related.label not in topics_already_scraped:
@@ -95,6 +99,7 @@ def batch(limit=100, out='topics.json', n=sys.maxsize, parse=True, mongo='mongod
     json.dump(items, open(out, encoding='utf-8', mode='w'),
               indent=4,
               sort_keys=True)
+
 
 if __name__ == '__main__':
     batch()
