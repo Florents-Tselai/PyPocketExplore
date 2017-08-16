@@ -6,8 +6,6 @@ It can be used to collect data about the most popular Pocket items for different
 
 An example usage would be crawling the data and use it as a training set to predict the number of pocket saves for a web page.
 
-Also available on [GitHub](https://github.com/Florents-Tselai/PyPocketExplore)
-
 ## Usage
 
 The easiest way to install the package is through PyPi.
