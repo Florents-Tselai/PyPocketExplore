@@ -1,24 +1,93 @@
 # PyPocketExplore - Unofficial API to [Pocket Explore](https://getpocket.com/explore/) data
 
-This is a flask-based API to access [Pocket Explore](https://getpocket.com/explore/)
+`PyPocketExplore` is a CLI-based and web-based API to access [Pocket Explore](https://getpocket.com/explore/ data.
 It can be used to collect data about the most popular Pocket items in different topics.
 
-An example usage would be crawling the data and use it as a training set to predict the number of pocket saves for a web page
+An example usage would be crawling the data and use it as a training set to predict the number of pocket saves for a web page.
 
-## Installation
-Before running *PyPocketExplore API*, you have to clone the code from this repository, install requirements at first.
+## Usage
+The easiest way to install the package is through PyPi.
+This should get you up-and-running pretty quickly.
+```shell
+$ pip install PyPocketExplore
+```
 
+Through the CLI there are two modes: `topic` and `batch`
+
+Through the first one (`pypocketexplore topic`) you can download items from specific topics and output them to a nicely formatted JSON file.
+
+```bash
+pypocketexplore topic --help
+Usage: pypocketexplore topic [OPTIONS] [LABEL]...
+
+  Download specific labels
+
+Options:
+  --limit INTEGER  Limit items to download
+  --out TEXT       JSON output fp
+  --nlp          If set, also parses the html and runs it through NLTK
+  --help           Show this message and exit.
+```
+
+For example, this command
+```bash
+$ pypocketexplore topic python data sex books --nlp --out life_topics.json
+```
+will go through the corresponding pages: 
+`https://getpocket.com/explore/python, https://getpocket.com/explore/data, https://getpocket.com/explore/sex, https://getpocket.com/explore/books`
+one-by-one and then:
+
+* scrap and extract the immediately available data for each item (`item_id, title, save count, excerpt and url`)
+* run each item url through the awesome [Newspaper](http://newspaper.readthedocs.io/en/latest/) library (in-parallel)
+* apply NLP to each item's text
+* save the results to `life_topics.json`
+
+In the end you'll have a **rich dataset full of text to play with and of course a popularity metric** - pretty cool to experiment with.
+
+For each topic on *Pocket Explore*, there are a set of `related topics` which one can crawl through pretty easily
+in a recursive way.
+For example after scraping `https://getpocket.com/explore/python` on can then scrap the 
+`related topics: programming javascript google windows java linux data science python 3 developer`.
+
+This essentially means that one can crawl through the whole graph of topics by following the `related topics` as edges. 
+To do this one of course needs a set of *seed topics* to initiate the crawling process.
+To get these seeds, the `pypocketexplore batch` mode fetches the taxonomy labels provided by [IBM Watson][https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html].
+and then walks through the graph.
+(I guess Pocket uses the IBM Watson to label its items, so this kind of reverse-engineering make sense. (Sorry Pocket guys) )
+
+```bash
+Usage: pypocketexplore batch [OPTIONS]
+
+  Download all topics recursively
+
+Options:
+  --n INTEGER      Max number of items
+  --limit INTEGER  Limit items to download per topic
+  --out TEXT       JSON output fp
+  --nlp            If set, also parses the html and runs it through NLTK
+  --mongo TEXT     Mongo DB URI to save items
+  --help           Show this message and exit.
+```
+
+**CAUTION**
+This mode with all goodies enabled will take few days to run and then collect around 150k unique items
+through 4k topics.
+I have tried to space the requests to Pocket's servers and handle rate limit errors, 
+but one can never be sure with such things.
+
+## Web API
+To have access to a standalone web API you need to clone the repo locally first.
 ```shell
 $ git clone git@github.com:Florents-Tselai/PyPocketExplore.git
 $ cd PyPocketExplore
 $ pip install -r requirements.txt
 ```
 
-## Usage
 To run this API application, use the `flask` command as same as [Flask Quickstart](http://flask.pocoo.org/docs/0.12/quickstart/)
 
 ```shell
-$ export FLASK_APP=./PyPocketExplore/api/api.py
+$ cd PyPocketExplore
+$ export FLASK_APP=./PyPocketExplore/pypocketexplore/api/api.py
 $ export FLASK_DEBUG=1 ## if you run in debug mode.
 $ flask run
  * Running on http://localhost:5000/

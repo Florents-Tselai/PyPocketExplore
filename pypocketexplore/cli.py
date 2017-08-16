@@ -21,25 +21,27 @@ def cli():
 @cli.command('topic', help='Download for specific labels')
 @click.argument('label', nargs=-1)
 @click.option('--limit', default=100, help='Limit items to download')
-@click.option('--out', default='topics.json', help='JSON output fp')
-@click.option('--parse', is_flag=True, help='If set, also parses the html and runs it through NLTK')
-def topic(label, limit, out, parse):
+@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output fp')
+@click.option('--nlp', is_flag=True, help='If set, also parses the html and runs it through NLTK')
+def topic(label, limit, out, nlp):
     items = []
     for l in label:
-        scraper = PocketTopicScraper(l, limit=limit, parse=parse)
+        scraper = PocketTopicScraper(l, limit=limit, parse=nlp)
         items.extend([i.to_dict() for i in scraper.scrap().items])
-    json.dump(items, open(out, encoding='utf-8', mode='w'),
+    json.dump(items,
+              open(out, encoding='utf-8', mode='w'),
               indent=4,
-              sort_keys=True)
+              sort_keys=True
+              )
 
 
-@cli.command('batch', help='Download topics recursively')
+@cli.command('batch', help='Download topics recursively. USE WITH CAUTION')
 @click.option('--n', default=sys.maxsize, help='Max number of items')
 @click.option('--limit', default=100, help='Limit items to download per topic')
-@click.option('--out', default='topics.json', help='JSON output fp')
+@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output fp')
 @click.option('--nlp', is_flag=True, default=True, help='If set, also parses the html and runs it through NLTK')
-@click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore', default=True, help='Mongo DB URI to save items')
-def batch(limit=100, out='topics.json', n=sys.maxsize, nlp=True, mongo=None):
+@click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore', help='Mongo DB URI to save items')
+def batch(limit=100, out='pypocketexplore_output_topics.json', n=sys.maxsize, nlp=True, mongo=None):
     html = req.get(
         "https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html").content
     soup = BeautifulSoup(html, 'html.parser')

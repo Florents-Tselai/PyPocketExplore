@@ -16,6 +16,6 @@ setup(
     long_description=open('README.md', 'r').read(),
     author='Florents Tselai',
     author_email='florents.tselai@gmail.com',
-    url='https://github.com/Florents-Tselai/PyPocketTopics',
+    url='https://github.com/Florents-Tselai/PyPocketExplore',
     install_requires=open('requirements.txt').read().splitlines()
 )
