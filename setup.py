@@ -12,7 +12,7 @@ setup(
         pypocketexplore=pypocketexplore.cli:cli
     ''',
     license='The MIT License (MIT) Copyright © 2017 Florents Tselai.',
-    description='Unofficial API to Pocket Explore data',
+    description='PyPocketExplore - Unofficial API to Pocket Explore data',
     long_description=open('README.md', 'r').read(),
     author='Florents Tselai',
     author_email='florents.tselai@gmail.com',
