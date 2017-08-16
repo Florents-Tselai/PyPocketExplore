@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='PyPocketExplore',
-    version='1.0.0',
+    version='v1.0.0',
     packages=['pypocketexplore', ],
     entry_points='''
         [console_scripts]
