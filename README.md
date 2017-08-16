@@ -1,6 +1,6 @@
-# [`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning) - Unofficial API to [Pocket Explore](https://getpocket.com/explore/) data
+# [`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning.html) - Unofficial API to [Pocket Explore](https://getpocket.com/explore/) data
 
-[`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning) 
+[`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning.html) 
 is a CLI-based and web-based API to access [Pocket Explore](https://getpocket.com/explore/) data.
 It can be used to collect data about the most popular Pocket items for different topics.
 
