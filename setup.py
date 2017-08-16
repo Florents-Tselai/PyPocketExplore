@@ -16,6 +16,6 @@ setup(
     long_description=open('README.md', 'r').read(),
     author='Florents Tselai',
     author_email='florents.tselai@gmail.com',
-    url='https://github.com/Florents-Tselai/PyPocketExplore',
+    url='http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning',
     install_requires=open('requirements.txt').read().splitlines()
 )

@@ -18,11 +18,11 @@ def cli():
     pass
 
 
-@cli.command('topic', help='Download for specific labels')
+@cli.command('topic', help='Download items for specific topics')
 @click.argument('label', nargs=-1)
 @click.option('--limit', default=100, help='Limit items to download')
-@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output fp')
-@click.option('--nlp', is_flag=True, help='If set, also parses the html and runs it through NLTK')
+@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output filepath')
+@click.option('--nlp', is_flag=True, help='If set, also downloads the page and applies NLP (through NLTK)')
 def topic(label, limit, out, nlp):
     items = []
     for l in label:
@@ -35,11 +35,11 @@ def topic(label, limit, out, nlp):
               )
 
 
-@cli.command('batch', help='Download topics recursively. USE WITH CAUTION')
-@click.option('--n', default=sys.maxsize, help='Max number of items')
+@cli.command('batch', help='Download items for all topics recursively. \nUSE WITH CAUTION!')
+@click.option('--n', default=sys.maxsize, help='Max number of total items to download')
 @click.option('--limit', default=100, help='Limit items to download per topic')
-@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output fp')
-@click.option('--nlp', is_flag=True, default=True, help='If set, also parses the html and runs it through NLTK')
+@click.option('--out', default='pypocketexplore_output_topics.json', help='JSON output filepath')
+@click.option('--nlp', is_flag=True, default=True, help='If set, also downloads the page and applies NLP (through NLTK)')
 @click.option('--mongo', default='mongodb://localhost:27017/pypocketexplore', help='Mongo DB URI to save items')
 def batch(limit=100, out='pypocketexplore_output_topics.json', n=sys.maxsize, nlp=True, mongo=None):
     html = req.get(

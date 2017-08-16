@@ -1,11 +1,15 @@
-# PyPocketExplore - Unofficial API to [Pocket Explore](https://getpocket.com/explore/) data
+# [`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning) - Unofficial API to [Pocket Explore](https://getpocket.com/explore/) data
 
-`PyPocketExplore` is a CLI-based and web-based API to access [Pocket Explore](https://getpocket.com/explore/ data.
-It can be used to collect data about the most popular Pocket items in different topics.
+[`PyPocketExplore`](http://tselai.com/pypocketexplore-collecting-exploring-predicting-pocket-items-machine-learning) 
+is a CLI-based and web-based API to access [Pocket Explore](https://getpocket.com/explore/) data.
+It can be used to collect data about the most popular Pocket items for different topics.
 
 An example usage would be crawling the data and use it as a training set to predict the number of pocket saves for a web page.
 
+Also available on [GitHub](https://github.com/Florents-Tselai/PyPocketExplore)
+
 ## Usage
+
 The easiest way to install the package is through PyPi.
 This should get you up-and-running pretty quickly.
 ```shell
@@ -14,19 +18,18 @@ $ pip install PyPocketExplore
 
 Through the CLI there are two modes: `topic` and `batch`
 
-Through the first one (`pypocketexplore topic`) you can download items from specific topics and output them to a nicely formatted JSON file.
+With the first one (`pypocketexplore topic`) you can download items from specific topics and output them to a nicely formatted JSON file.
 
 ```bash
-pypocketexplore topic --help
 Usage: pypocketexplore topic [OPTIONS] [LABEL]...
 
-  Download specific labels
+  Download items for specific topics
 
 Options:
   --limit INTEGER  Limit items to download
-  --out TEXT       JSON output fp
-  --nlp          If set, also parses the html and runs it through NLTK
-  --help           Show this message and exit.
+  --out TEXT       JSON output filepath
+  --nlp            If set, also downloads the page and applies NLP (through
+                   NLTK)
 ```
 
 For example, this command
@@ -43,6 +46,7 @@ one-by-one and then:
 * save the results to `life_topics.json`
 
 In the end you'll have a **rich dataset full of text to play with and of course a popularity metric** - pretty cool to experiment with.
+You can check it out [here](https://tselai.com/data/life_topics.json)
 
 For each topic on *Pocket Explore*, there are a set of `related topics` which one can crawl through pretty easily
 in a recursive way.
@@ -51,31 +55,33 @@ For example after scraping `https://getpocket.com/explore/python` on can then sc
 
 This essentially means that one can crawl through the whole graph of topics by following the `related topics` as edges. 
 To do this one of course needs a set of *seed topics* to initiate the crawling process.
-To get these seeds, the `pypocketexplore batch` mode fetches the taxonomy labels provided by [IBM Watson][https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html].
+To get these seeds, the `pypocketexplore batch` mode fetches the taxonomy labels provided by [IBM Watson](https://www.ibm.com/watson/developercloud/doc/natural-language-understanding/categories.html).
 and then walks through the graph.
 (I guess Pocket uses the IBM Watson to label its items, so this kind of reverse-engineering make sense. (Sorry Pocket guys) )
 
 ```bash
 Usage: pypocketexplore batch [OPTIONS]
 
-  Download all topics recursively
+  Download items for all topics recursively.  USE WITH CAUTION!
 
 Options:
-  --n INTEGER      Max number of items
+  --n INTEGER      Max number of total items to download
   --limit INTEGER  Limit items to download per topic
-  --out TEXT       JSON output fp
-  --nlp            If set, also parses the html and runs it through NLTK
+  --out TEXT       JSON output filepath
+  --nlp            If set, also downloads the page and applies NLP (through
+                   NLTK)
   --mongo TEXT     Mongo DB URI to save items
   --help           Show this message and exit.
 ```
 
 **CAUTION**
-This mode with all goodies enabled will take few days to run and then collect around 150k unique items
-through 4k topics.
+This mode with all goodies enabled will take few days to run and then collect around 300k unique items
+through 8k topics.
 I have tried to space the requests to Pocket's servers and handle rate limit errors, 
 but one can never be sure with such things.
 
 ## Web API
+
 To have access to a standalone web API you need to clone the repo locally first.
 ```shell
 $ git clone git@github.com:Florents-Tselai/PyPocketExplore.git
@@ -93,9 +99,10 @@ $ flask run
  * Running on http://localhost:5000/
 ```
 
-## Documentation
+## Web API Documentation
 
 ### Topic
+
 * `GET /api/topic/{topic}` - Get topic data
 
 Example topics: `python, finance, business` and more
@@ -103,6 +110,7 @@ Example topics: `python, finance, business` and more
 Example `GET /api/topic/python`
 
 #### Response
+
 ```json
 [
     {
